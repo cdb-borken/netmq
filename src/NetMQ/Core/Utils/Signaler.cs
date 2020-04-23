@@ -18,6 +18,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -38,24 +39,52 @@ namespace NetMQ.Core.Utils
         {
             m_dummy = new byte[] { 0 };
             m_receiveDummy = new byte[1];
+            bool connected = false;
 
-            // Create the socketpair for signaling.
-            using (var listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Unspecified))
+            for (int i = 0; i < 3; ++i)
             {
-                listener.NoDelay = true;
-                listener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                try
+                {
+                    // Create the socketpair for signaling.
+                    using (var listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Unspecified))
+                    {
+                        listener.NoDelay = true;
+                        listener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
-                // using ephemeral port
-                listener.Bind(new IPEndPoint(IPAddress.Loopback, 0));
-                listener.Listen(1);
+                        // using ephemeral port
+                        listener.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+                        listener.Listen(1);
 
-                // NOTE: On first start m_writeSocket.Connect(..) always fails, but waiting a bit helps in this case 
-                Thread.Sleep(10);
+                        m_writeSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Unspecified) { NoDelay = true };
 
-                m_writeSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Unspecified) { NoDelay = true };
+                        IAsyncResult result = m_writeSocket.BeginConnect(listener.LocalEndPoint, null, null);
+                        bool success = result.AsyncWaitHandle.WaitOne(500, true);
 
-                m_writeSocket.Connect(listener.LocalEndPoint);
-                m_readSocket = listener.Accept();
+                        if (m_writeSocket.Connected)
+                        {
+                            m_writeSocket.EndConnect(result);
+                        }
+                        else
+                        {
+                            m_writeSocket.Close();
+                            continue;
+                        }
+
+                        m_readSocket = listener.Accept();
+
+                        connected = true;
+                        break;
+                    }
+                }
+                catch (SocketException)
+                {
+                    continue;
+                }
+            }
+
+            if (!connected)
+            {
+                throw new InvalidOperationException("Could not connect reader to writer socket");
             }
 
             m_writeSocket.Blocking = false;
@@ -72,7 +101,7 @@ namespace NetMQ.Core.Utils
                 m_writeSocket.LingerState = new LingerOption(true, 0);
             }
             catch (SocketException)
-            {}
+            { }
 
             try
             {
@@ -83,7 +112,7 @@ namespace NetMQ.Core.Utils
 #endif
             }
             catch (SocketException)
-            {}
+            { }
 
             try
             {
@@ -94,7 +123,7 @@ namespace NetMQ.Core.Utils
 #endif
             }
             catch (SocketException)
-            {}
+            { }
         }
 
         // Creates a pair of file descriptors that will be used
