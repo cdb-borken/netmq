@@ -566,7 +566,11 @@ namespace NetMQ.Core.Transports
                                     var bufferp = new ByteArraySegment(tmp);
 
                                     int bufferSize = m_encoder.Encode(ref bufferp, headerSize);
-                                    Debug.Assert(bufferSize == headerSize);
+                                    if (bufferSize != headerSize)
+                                    {
+                                        return;
+                                    }
+                                    //Debug.Assert(bufferSize == headerSize);
                                     
                                     // Make sure the decoder sees the data we have already received.
                                     m_inpos = new ByteArraySegment(m_greeting);
