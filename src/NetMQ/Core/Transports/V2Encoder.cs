@@ -1,4 +1,3 @@
-
 namespace NetMQ.Core.Transports
 {
     /// <summary>
@@ -34,6 +33,8 @@ namespace NetMQ.Core.Transports
 
         private void SizeReady()
         {
+            Assumes.NotNull(m_inProgress.UnsafeData);
+
             // Write message body into the buffer.
             NextStep(new ByteArraySegment(m_inProgress.UnsafeData, m_inProgress.UnsafeOffset),
                 m_inProgress.Size, MessageReadyState, true);

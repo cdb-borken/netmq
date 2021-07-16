@@ -23,7 +23,7 @@ namespace NetMQ.Tests
             Assert.False(msg.IsDelimiter);
             Assert.False(msg.IsIdentity);
             Assert.False(msg.IsInitialised);
-            Assert.Throws<NullReferenceException>(() => msg[0] = 1);
+            Assert.ThrowsAny<Exception>(() => msg[0] = 1);
             Assert.Throws<FaultException>((Action)msg.Close);
         }
 
@@ -208,7 +208,7 @@ namespace NetMQ.Tests
             Assert.Equal(MsgType.Pool, msg.MsgType);
             Assert.Equal(MsgFlags.None, msg.Flags);
             Assert.NotNull(msg.UnsafeData);
-            Assert.Equal(100, msg.UnsafeData.Length);
+            Assert.Equal(100, msg.UnsafeData!.Length);
             Assert.False(msg.HasMore);
             Assert.False(msg.IsDelimiter);
             Assert.False(msg.IsIdentity);

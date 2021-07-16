@@ -1,5 +1,4 @@
 using System;
-using JetBrains.Annotations;
 
 namespace NetMQ.Core.Transports
 {
@@ -14,7 +13,7 @@ namespace NetMQ.Core.Transports
         /// encoder will provide buffer of its own.
         /// </summary>
         /// <returns>Returns data size or 0 when a new message is required</returns>
-        int Encode(ref ByteArraySegment data, int size);
+        int Encode(ref ByteArraySegment? data, int size);
         
         /// <summary>
         /// Load a new message into encoder.

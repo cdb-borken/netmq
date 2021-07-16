@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using NetMQ.Sockets;
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 
 namespace NetMQ
 {
@@ -93,7 +94,7 @@ namespace NetMQ
         /// <param name="result">Will be filled with the item upon success</param>
         /// <param name="timeout">Timeout to try and dequeue and item</param>
         /// <returns>Will return false if it didn't succeed to dequeue an item after the timeout.</returns>
-        public bool TryDequeue(out T result, TimeSpan timeout)
+        public bool TryDequeue([MaybeNull] out T result, TimeSpan timeout)
         {
             if (m_reader.TryReceive(ref m_dequeueMsg, timeout))
             {
@@ -141,7 +142,7 @@ namespace NetMQ
         /// <inheritdoc />
         public IEnumerator<T> GetEnumerator() => m_queue.GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator() { yield return GetEnumerator(); }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         #endregion
 
