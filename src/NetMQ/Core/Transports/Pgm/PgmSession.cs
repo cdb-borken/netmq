@@ -1,21 +1,20 @@
 ﻿using System.Diagnostics;
 using System.Net.Sockets;
 using AsyncIO;
-using JetBrains.Annotations;
 
 namespace NetMQ.Core.Transports.Pgm
 {
     internal sealed class PgmSession : IEngine, IProactorEvents
     {
-        private AsyncSocket m_handle;
+        private AsyncSocket? m_handle;
         private readonly Options m_options;
-        private IOObject m_ioObject;
-        private SessionBase m_session;
-        private V1Decoder m_decoder;
+        private IOObject? m_ioObject;
+        private SessionBase? m_session;
+        private V1Decoder? m_decoder;
         private bool m_joined;
 
         private int m_pendingBytes;
-        private ByteArraySegment m_pendingData;
+        private ByteArraySegment? m_pendingData;
 
         private readonly ByteArraySegment m_data;
 
@@ -32,7 +31,7 @@ namespace NetMQ.Core.Transports.Pgm
 
         private State m_state;
 
-        public PgmSession([NotNull] PgmSocket pgmSocket, [NotNull] Options options)
+        public PgmSession(PgmSocket pgmSocket, Options options)
         {
             m_handle = pgmSocket.Handle;
             m_options = options;
@@ -44,6 +43,8 @@ namespace NetMQ.Core.Transports.Pgm
 
         void IEngine.Plug(IOThread ioThread, SessionBase session)
         {
+            Assumes.NotNull(m_handle);
+
             m_session = session;
             m_ioObject = new IOObject(null);
             m_ioObject.SetHandler(this);
@@ -77,7 +78,20 @@ namespace NetMQ.Core.Transports.Pgm
                 // For a UDP datagram socket, this error would indicate that a previous  
                 // send operation resulted in an ICMP "Port Unreachable" message. 
                 if (ex.SocketErrorCode == SocketError.ConnectionReset) 
-                    Error(); 
+                    Error();
+                // ** Berkeley Description: A connection abort was caused internal to your host machine. 
+                // The software caused a connection abort because there is no space on the socket's queue 
+                // and the socket cannot receive further connections.
+                // ** WinSock description: The error can occur when the local network system aborts a connection. 
+                // This would occur if WinSock aborts an established connection after data retransmission 
+                // fails (receiver never acknowledges data sent on a datastream socket).
+                // ** Windows Sockets Error Codes: Software caused connection abort.
+                // An established connection was aborted by the software in your host computer, 
+                // possibly due to a data transmission time -out or protocol error.
+                // ** WSARecv Error Code Description: The virtual circuit was terminated due to a 
+                // time -out or other failure.
+                else if (ex.SocketErrorCode == SocketError.ConnectionAborted)
+                    Error();   
                 else 
                     throw NetMQException.Create(ex.SocketErrorCode, ex); 
             } 
@@ -85,6 +99,9 @@ namespace NetMQ.Core.Transports.Pgm
 
         public void ActivateIn()
         {
+            Assumes.NotNull(m_decoder);
+            Assumes.NotNull(m_session);
+
             if (m_state == State.Stuck)
             {
                 var pushResult = m_decoder.PushMsg(m_session.PushMsg);
@@ -151,6 +168,10 @@ namespace NetMQ.Core.Transports.Pgm
         
         void ProcessInput ()
         {
+            Assumes.NotNull(m_decoder);
+            Assumes.NotNull(m_pendingData);
+            Assumes.NotNull(m_session);
+
             while (m_pendingBytes > 0) {
                 var result = m_decoder.Decode(m_pendingData, m_pendingBytes, out var processed);
                 m_pendingData.AdvanceOffset(processed);
@@ -187,9 +208,12 @@ namespace NetMQ.Core.Transports.Pgm
 
         private void Error()
         {
-            Debug.Assert(m_session != null);
+            Assumes.NotNull(m_session);
 
             m_session.Detach();
+
+            Assumes.NotNull(m_ioObject);
+            Assumes.NotNull(m_handle);
 
             m_ioObject.RemoveSocket(m_handle);
 
@@ -236,6 +260,8 @@ namespace NetMQ.Core.Transports.Pgm
         {
             var msg = new Msg();
             msg.InitEmpty();
+
+            Assumes.NotNull(m_session);
 
             while (m_session.PullMsg(ref msg) == PullMsgResult.Ok)
             {

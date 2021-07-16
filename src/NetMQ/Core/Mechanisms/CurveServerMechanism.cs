@@ -299,6 +299,8 @@ namespace NetMQ.Core.Mechanisms
             msg.InitPool(14 + Curve25519XSalsa20Poly1305.TagLength + metadataLength);
             var readyBox = msg.Slice(14);
 
+            Assumes.NotNull(m_box);
+            
             m_box.Encrypt(readyBox, readyPlaintext, readyNonce);
             Array.Clear(readyPlaintext, 0, readyPlaintext.Length);
             

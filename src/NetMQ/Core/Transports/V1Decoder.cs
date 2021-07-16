@@ -156,6 +156,8 @@ namespace NetMQ.Core.Transports
 
             m_inProgress.SetFlags((MsgFlags)first & MsgFlags.More);
 
+            Assumes.NotNull(m_inProgress.UnsafeData);
+
             NextStep(new ByteArraySegment(m_inProgress.UnsafeData, m_inProgress.UnsafeOffset),
                 m_inProgress.Size, MessageReadyState);
 

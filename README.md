@@ -25,7 +25,7 @@ This repository is for version 4, for version 3 go to: https://github.com/NetMQ/
 
 ## Using / Documentation
 
-Before using NetMQ, make sure to read the [ZeroMQ Guide](http://zguide.zeromq.org/page:all).
+Before using NetMQ, make sure to read the [ZeroMQ Guide](http://zguide.zeromq.org/).
 
 The NetMQ documentation can be found at [netmq.readthedocs.org](http://netmq.readthedocs.org/en/latest/). Thanks to [Sacha Barber](http://www.codeproject.com/Members/Sacha-Barber) who agreed to do the documentation.
 
@@ -105,10 +105,6 @@ There are open issues in the issues tab that still need to be taken care of, fee
 
 ## Build Server
 
-[TeamCity at CodeBetter](http://teamcity.codebetter.com/project.html?projectId=project372&tab=projectOverview)
-
 ![Code Better](http://www.jetbrains.com/img/banners/Codebetter300x250.png)
 
 [YouTrack by JetBrains - keyboard-centric bug tracker](http://www.jetbrains.com/youtrack)
-
-[TeamCity by JetBrains - continuous integration server](http://www.jetbrains.com/teamcity)

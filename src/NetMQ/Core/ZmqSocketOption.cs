@@ -333,6 +333,11 @@ namespace NetMQ.Core
         HeartbeatTimeout = 56,
         
         /// <summary>
+        /// Hello Message to send to peer upon connecting
+        /// </summary>
+        HelloMessage = 57,
+        
+        /// <summary>
         /// Specifies the byte-order: big-endian, vs little-endian.
         /// </summary>
         Endian = 1000,
@@ -340,6 +345,9 @@ namespace NetMQ.Core
         /// <summary>
         /// Specifies the max datagram size for PGM.
         /// </summary>
-        PgmMaxTransportServiceDataUnitLength = 1001
+        PgmMaxTransportServiceDataUnitLength = 1001,
+
+        Correlate = 58, // in zmq it's 52 and 53, but I guess it does not matter so long as it is unique.
+        Relaxed = 59
     }
 }
