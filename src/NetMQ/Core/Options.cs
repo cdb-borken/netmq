@@ -64,6 +64,10 @@ namespace NetMQ.Core
             HeartbeatTtl = 0;
             HeartbeatInterval = 0;
             HeartbeatTimeout = -1;
+            HelloMsg = null;
+            CanSendHelloMsg = false;
+            Correlate = false;
+            Relaxed = false;
         }
 
         /// <summary>
@@ -100,7 +104,7 @@ namespace NetMQ.Core
         /// Get or set the byte-array that represents the Identity.
         /// The initial value is null.
         /// </summary>
-        public byte[] Identity { get; set; }
+        public byte[]? Identity { get; set; }
 
         /// <summary>
         /// Get or set the size of the socket-identity byte-array.
@@ -116,7 +120,7 @@ namespace NetMQ.Core
             }
         }
         
-        public byte[] LastPeerRoutingId { get; set; }
+        public byte[]? LastPeerRoutingId { get; set; }
 
         /// <summary>
         /// Get or set whether this allows the use of IPv4 sockets only.
@@ -129,7 +133,7 @@ namespace NetMQ.Core
         /// Get or set the last socket endpoint resolved URI
         /// The initial value is null.
         /// </summary>
-        public string LastEndpoint { get; set; }
+        public string? LastEndpoint { get; set; }
 
         /// <summary>
         /// Get or set the Linger time, in milliseconds.
@@ -313,35 +317,49 @@ namespace NetMQ.Core
         /// </summary>
         public int HeartbeatTimeout { get; set; }
         
+        /// <summary>
+        /// Hello msg to send to peer upon connecting
+        /// </summary>
+        public byte[]? HelloMsg { get; set; }
         
+        /// <summary>
+        /// Indicate of socket can send an hello msg
+        /// </summary>
+        public bool CanSendHelloMsg { get; set; }
+
+        public bool Correlate { get; set; }
+        public bool Relaxed { get; set; }
+
         /// <summary>
         /// Assign the given optionValue to the specified option.
         /// </summary>
         /// <param name="option">a ZmqSocketOption that specifies what to set</param>
         /// <param name="optionValue">an Object that is the value to set that option to</param>
         /// <exception cref="InvalidException">The option and optionValue must be valid.</exception>
-        public void SetSocketOption(ZmqSocketOption option, object optionValue)
+        public void SetSocketOption(ZmqSocketOption option, object? optionValue)
         {
+            T Get<T>() => optionValue is T v ? v : throw new ArgumentException($"Value for option {option} have type {typeof(T).Name}.", nameof(optionValue));
+
             switch (option)
             {
                 case ZmqSocketOption.SendHighWatermark:
-                    SendHighWatermark = (int)optionValue;
+                    SendHighWatermark = Get<int>();
                     break;
 
                 case ZmqSocketOption.ReceiveHighWatermark:
-                    ReceiveHighWatermark = (int)optionValue;
+                    ReceiveHighWatermark = Get<int>();
                     break;
 
                 case ZmqSocketOption.SendLowWatermark:
-                    SendLowWatermark = (int)optionValue;
+                    SendLowWatermark = Get<int>();
                     break;
 
                 case ZmqSocketOption.ReceiveLowWatermark:
-                    ReceiveLowWatermark = (int)optionValue;
+                    ReceiveLowWatermark = Get<int>();
                     break;
 
                 case ZmqSocketOption.Affinity:
-                    Affinity = (long)optionValue;
+                    Affinity = Get<long>();
                     break;
 
                 case ZmqSocketOption.Identity:
@@ -361,112 +379,112 @@ namespace NetMQ.Core
                     break;
 
                 case ZmqSocketOption.Rate:
-                    Rate = (int)optionValue;
+                    Rate = Get<int>();
                     break;
 
                 case ZmqSocketOption.RecoveryIvl:
-                    RecoveryIvl = (int)optionValue;
+                    RecoveryIvl = Get<int>();
                     break;
 
                 case ZmqSocketOption.SendBuffer:
-                    SendBuffer = (int)optionValue;
+                    SendBuffer = Get<int>();
                     break;
 
                 case ZmqSocketOption.ReceiveBuffer:
-                    ReceiveBuffer = (int)optionValue;
+                    ReceiveBuffer = Get<int>();
                     break;
 
                 case ZmqSocketOption.Linger:
-                    Linger = (int)optionValue;
+                    Linger = Get<int>();
                     break;
 
                 case ZmqSocketOption.ReconnectIvl:
-                    var reconnectIvl = (int)optionValue;
+                    var reconnectIvl = Get<int>();
                     if (reconnectIvl < -1)
                         throw new InvalidException($"Options.SetSocketOption(ReconnectIvl, {reconnectIvl}) optionValue must be >= -1.");
                     ReconnectIvl = reconnectIvl;
                     break;
 
                 case ZmqSocketOption.ReconnectIvlMax:
-                    var reconnectIvlMax = (int)optionValue;
+                    var reconnectIvlMax = Get<int>();
                     if (reconnectIvlMax < 0)
                         throw new InvalidException($"Options.SetSocketOption(ReconnectIvlMax, {reconnectIvlMax}) optionValue must be non-negative.");
                     ReconnectIvlMax = reconnectIvlMax;
                     break;
 
                 case ZmqSocketOption.Backlog:
-                    Backlog = (int)optionValue;
+                    Backlog = Get<int>();
                     break;
 
                 case ZmqSocketOption.MaxMessageSize:
-                    MaxMessageSize = (long)optionValue;
+                    MaxMessageSize = Get<long>();
                     break;
 
                 case ZmqSocketOption.MulticastHops:
-                    MulticastHops = (int)optionValue;
+                    MulticastHops = Get<int>();
                     break;
 
                 case ZmqSocketOption.SendTimeout:
-                    SendTimeout = (int)optionValue;
+                    SendTimeout = Get<int>();
                     break;
 
                 case ZmqSocketOption.IPv4Only:
-                    IPv4Only = (bool)optionValue;
+                    IPv4Only = Get<bool>();
                     break;
 
                 case ZmqSocketOption.TcpKeepalive:
-                    var tcpKeepalive = (int)optionValue;
+                    var tcpKeepalive = Get<int>();
                     if (tcpKeepalive != -1 && tcpKeepalive != 0 && tcpKeepalive != 1)
                         throw new InvalidException($"Options.SetSocketOption(TcpKeepalive, {tcpKeepalive}) optionValue is neither -1, 0, nor 1.");
                     TcpKeepalive = tcpKeepalive;
                     break;
 
                 case ZmqSocketOption.DelayAttachOnConnect:
-                    DelayAttachOnConnect = (bool)optionValue;
+                    DelayAttachOnConnect = Get<bool>();
                     break;
 
                 case ZmqSocketOption.TcpKeepaliveIdle:
-                    TcpKeepaliveIdle = (int)optionValue;
+                    TcpKeepaliveIdle = Get<int>();
                     break;
 
                 case ZmqSocketOption.TcpKeepaliveIntvl:
-                    TcpKeepaliveIntvl = (int)optionValue;
+                    TcpKeepaliveIntvl = Get<int>();
                     break;
 
                 case ZmqSocketOption.Endian:
-                    Endian = (Endianness)optionValue;
+                    Endian = Get<Endianness>();
                     break;
 
                 case ZmqSocketOption.DisableTimeWait:
-                    DisableTimeWait = (bool)optionValue;
+                    DisableTimeWait = Get<bool>();
                     break;
 
                 case ZmqSocketOption.PgmMaxTransportServiceDataUnitLength:
-                    PgmMaxTransportServiceDataUnitLength = (int)optionValue;
+                    PgmMaxTransportServiceDataUnitLength = Get<int>();
                     break;
 
                 case ZmqSocketOption.HeartbeatInterval:
-                    HeartbeatInterval = (int) optionValue;
+                    HeartbeatInterval = Get<int>();
                     break;
 
                 case ZmqSocketOption.HeartbeatTtl:
                     // Convert this to deciseconds from milliseconds
-                    HeartbeatTtl = (int) optionValue;
+                    HeartbeatTtl = Get<int>();
                     HeartbeatTtl /= 100;
                     break;
 
                 case ZmqSocketOption.HeartbeatTimeout:
-                    HeartbeatTimeout = (int) optionValue;
+                    HeartbeatTimeout = Get<int>();
                     break;
 
                 case ZmqSocketOption.CurveServer:
-                    AsServer = (bool) optionValue;
+                    AsServer = Get<bool>();
                     Mechanism = AsServer ? MechanismType.Curve : MechanismType.Null;
                     break;
                 
                 case ZmqSocketOption.CurvePublicKey:
                 {
-                    var key = (byte[]) optionValue;
+                    var key = Get<byte[]>();
                     if (key.Length != 32)
                         throw new InvalidException("Curve key size must be 32 bytes");
                     Mechanism = MechanismType.Curve;
@@ -476,7 +494,7 @@ namespace NetMQ.Core
 
                 case ZmqSocketOption.CurveSecretKey:
                 {
-                    var key = (byte[]) optionValue;
+                    var key = Get<byte[]>();
                     if (key.Length != 32)
                         throw new InvalidException("Curve key size must be 32 bytes");
                     Mechanism = MechanismType.Curve;
@@ -486,13 +504,41 @@ namespace NetMQ.Core
 
                 case ZmqSocketOption.CurveServerKey:
                 {
-                    var key = (byte[]) optionValue;
+                    var key = Get<byte[]>();
                     if (key.Length != 32)
                         throw new InvalidException("Curve key size must be 32 bytes");
                     Mechanism = MechanismType.Curve;
                     Buffer.BlockCopy(key, 0, CurveServerKey, 0, 32);
                     break;
                 }
+
+                case ZmqSocketOption.HelloMessage:
+                {
+                    if (optionValue == null)
+                    {
+                        HelloMsg = null;
+                    }
+                    else
+                    {
+                        var helloMsg = Get<byte[]>();
+                        HelloMsg = new byte[helloMsg.Length];
+                    
+                        Buffer.BlockCopy(helloMsg, 0, HelloMsg, 0, helloMsg.Length);
+                    }
+                    break;
+                }
+
+                case ZmqSocketOption.Relaxed:
+                    {
+                        Relaxed = Get<bool>();
+                        break;
+                    }
+
+                case ZmqSocketOption.Correlate:
+                    {
+                        Correlate = Get<bool>();
+                        break;
+                    }
                 
                 default:
                     throw new InvalidException("Options.SetSocketOption called with invalid ZmqSocketOption of " + option);
@@ -505,7 +551,7 @@ namespace NetMQ.Core
         /// <param name="option">a ZmqSocketOption that specifies what to get</param>
         /// <returns>an Object that is the value of that option</returns>
         /// <exception cref="InvalidException">A valid option must be specified.</exception>
-        public object GetSocketOption(ZmqSocketOption option)
+        public object? GetSocketOption(ZmqSocketOption option)
         {
             switch (option)
             {

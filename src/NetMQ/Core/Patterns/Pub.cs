@@ -20,19 +20,11 @@
 */
 
 using System;
-using JetBrains.Annotations;
 
 namespace NetMQ.Core.Patterns
 {
     internal sealed class Pub : XPub
     {
-        public class PubSession : XPubSession
-        {
-            public PubSession([NotNull] IOThread ioThread, bool connect, [NotNull] SocketBase socket, [NotNull] Options options, [NotNull] Address addr)
-                : base(ioThread, connect, socket, options, addr)
-            {}
-        }
-
         protected override void XAttachPipe(Pipe pipe, bool icanhasall)
         {
             // Don't delay pipe termination as there is no one
@@ -42,7 +34,7 @@ namespace NetMQ.Core.Patterns
             base.XAttachPipe(pipe, icanhasall);
         }
 
-        public Pub([NotNull] Ctx parent, int threadId, int socketId)
+        public Pub(Ctx parent, int threadId, int socketId)
             : base(parent, threadId, socketId)
         {
             m_options.SocketType = ZmqSocketType.Pub;

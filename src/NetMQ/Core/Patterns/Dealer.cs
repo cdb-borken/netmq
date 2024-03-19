@@ -20,7 +20,6 @@
 */
 
 using System.Diagnostics;
-using JetBrains.Annotations;
 using NetMQ.Core.Patterns.Utils;
 
 namespace NetMQ.Core.Patterns
@@ -32,24 +31,6 @@ namespace NetMQ.Core.Patterns
     internal class Dealer : SocketBase
     {
         /// <summary>
-        /// A DealerSession is a SessionBase subclass that is contained within the Dealer class.
-        /// </summary>
-        public class DealerSession : SessionBase
-        {
-            /// <summary>
-            /// Create a new DealerSession (which is just a SessionBase).
-            /// </summary>
-            /// <param name="ioThread">the I/O-thread to associate this with</param>
-            /// <param name="connect"></param>
-            /// <param name="socket"></param>
-            /// <param name="options"></param>
-            /// <param name="addr"></param>
-            public DealerSession([NotNull] IOThread ioThread, bool connect, [NotNull] SocketBase socket, [NotNull] Options options, [NotNull] Address addr)
-                : base(ioThread, connect, socket, options, addr)
-            {}
-        }
-
-        /// <summary>
         /// Messages are fair-queued from inbound pipes. And load-balanced to
         /// the outbound pipes.
         /// </summary>
@@ -60,10 +41,11 @@ namespace NetMQ.Core.Patterns
         /// <summary>
         /// Create a new Dealer socket that holds the prefetched message.
         /// </summary>
-        public Dealer([NotNull] Ctx parent, int threadId, int socketId)
+        public Dealer(Ctx parent, int threadId, int socketId)
             : base(parent, threadId, socketId)
         {
             m_options.SocketType = ZmqSocketType.Dealer;
+            m_options.CanSendHelloMsg = true;
 
             m_fairQueueing = new FairQueueing();
             m_loadBalancer = new LoadBalancer();
@@ -76,7 +58,7 @@ namespace NetMQ.Core.Patterns
         /// <param name="icanhasall">not used</param>
         protected override void XAttachPipe(Pipe pipe, bool icanhasall)
         {
-            Debug.Assert(pipe != null);
+            Assumes.NotNull(pipe);
             m_fairQueueing.Attach(pipe);
             m_loadBalancer.Attach(pipe);
         }
@@ -92,6 +74,17 @@ namespace NetMQ.Core.Patterns
         }
 
         /// <summary>
+        /// Transmit the given message.  The <c>Send</c> method calls this to do the actual sending.
+        /// </summary>
+        /// <param name="msg">the message to transmit</param>
+        /// <param name="pipe">the pipe that the message was transmitted on (output)</param>
+        /// <returns><c>true</c> if the message was sent successfully</returns>
+        protected bool XSendPipe(ref Msg msg, out Pipe? pipe)
+        {
+            return m_loadBalancer.SendPipe(ref msg, out pipe);
+        }
+
+        /// <summary>
         /// Get a message from FairQueuing data structure
         /// </summary>
         /// <param name="msg">a Msg to receive the message into</param>
@@ -99,6 +92,17 @@ namespace NetMQ.Core.Patterns
         protected override bool XRecv(ref Msg msg)
         {
             return m_fairQueueing.Recv(ref msg);
+        }
+
+        /// <summary>
+        /// Get a message from FairQueuing data structure
+        /// </summary>
+        /// <param name="msg">a Msg to receive the message into</param>
+        /// <param name="pipe">a specific Pipe to receive on</param>
+        /// <returns><c>true</c> if the message was received successfully, <c>false</c> if there were no messages to receive</returns>
+        protected bool XRecvPipe(ref Msg msg, out Pipe? pipe)
+        {
+            return m_fairQueueing.RecvPipe(ref msg, out pipe);
         }
 
         /// <summary>
